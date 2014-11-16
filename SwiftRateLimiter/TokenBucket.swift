@@ -17,8 +17,8 @@ class TokenBucket: NSObject {
     
     init(sizeOfBucket:Double, tokensPerInterval:Double!, interval:AnyObject) {
         super.init()
-        self.sizeOfBucket = Double(sizeOfBucket)
-        self.tokensPerInterval = Double(tokensPerInterval)
+        self.sizeOfBucket = sizeOfBucket
+        self.tokensPerInterval = tokensPerInterval
         self.contains = sizeOfBucket
         
         if let interval = interval as? String {
@@ -47,15 +47,15 @@ class TokenBucket: NSObject {
         let now = NSDate().timeIntervalSince1970
         let delta = max(now - self.lastDrip, 0)
         self.lastDrip = now
-        let dripAmount = delta * Double((self.tokensPerInterval / self.interval))
-        let newContains = dripAmount + Double(self.contains)
+        let dripAmount = delta * (self.tokensPerInterval / self.interval)
+        let newContains = dripAmount + self.contains
         self.contains = min(newContains, self.sizeOfBucket)
     }
     
     func removeToken(#count:Double, callback:((err:String?, remainingTokens:Double?) -> Void)) {
         // Used if we have to wait for more tokens
         func createDispatchLater() {
-            var waitInterval = ceil((Double(count) - self.contains) *
+            var waitInterval = ceil((count - self.contains) *
                 (self.interval / self.tokensPerInterval)) * 1000000000
             
             var waitTime = dispatch_time(DISPATCH_TIME_NOW, Int64(waitInterval))
@@ -70,7 +70,7 @@ class TokenBucket: NSObject {
             return
         }
         
-        if (Double(count) > self.sizeOfBucket) {
+        if (count > self.sizeOfBucket) {
             callback(err: "Requested more tokens than the bucket"
                 + " can contain", remainingTokens: nil)
             return

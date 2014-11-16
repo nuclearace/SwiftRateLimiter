@@ -32,7 +32,7 @@ class RateLimiter: NSObject {
         }
         
         let now = NSDate().timeIntervalSince1970
-        if (now - self.intervalStart >= Double(self.bucket.interval)) {
+        if (now - self.intervalStart >= self.bucket.interval) {
             self.intervalStart = now
             self.tokensThisInterval = 0
         }
@@ -41,7 +41,7 @@ class RateLimiter: NSObject {
             if (self.firesImmediatly) {
                 return callback(err: nil, remainingTokens: -1)
             }
-            var waitInterval = dispatch_time_t(ceil(self.intervalStart + Double(self.bucket.interval) - now) * 1000000000)
+            var waitInterval = dispatch_time_t(ceil(self.intervalStart + self.bucket.interval - now) * 1000000000)
             dispatch_after(waitInterval, dispatch_get_main_queue()) {
                 func afterBucketRemove(err:String?, tokensRemaining:Double?) {
                     if (err != nil) {
