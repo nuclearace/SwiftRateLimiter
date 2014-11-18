@@ -25,6 +25,15 @@ class RateLimiter: NSObject {
     
     func removeTokens(#count:Double, callback:((err:String?, remainingTokens:Double?) -> Void)) {
         
+        func afterBucketRemove(err:String?, tokensRemaining:Double?) {
+            if (err != nil) {
+                callback(err: err, remainingTokens: nil)
+                return
+            }
+            self.tokensThisInterval += count
+            callback(err: nil, remainingTokens: tokensRemaining)
+        }
+        
         if (count > self.bucket.sizeOfBucket) {
             callback(err: "Requested more tokens than the bucket"
                 + " can contain", remainingTokens: nil)
@@ -42,30 +51,12 @@ class RateLimiter: NSObject {
                 return callback(err: nil, remainingTokens: -1)
             }
             var waitInterval = dispatch_time_t(ceil(self.intervalStart + self.bucket.interval - now) * 1000000000)
-            dispatch_after(waitInterval, dispatch_get_main_queue()) {
-                func afterBucketRemove(err:String?, tokensRemaining:Double?) {
-                    if (err != nil) {
-                        callback(err: err, remainingTokens: nil)
-                        return
-                    }
-                    self.tokensThisInterval += count
-                    callback(err: nil, remainingTokens: tokensRemaining)
-                }
-                
-                self.bucket.removeToken(count: count, callback: afterBucketRemove)
+            dispatch_after(waitInterval, dispatch_get_main_queue())
+                {[afterBucketRemove = afterBucketRemove] in
+                    self.bucket.removeToken(count: count, callback: afterBucketRemove)
             }
             return
         }
-        
-        func afterBucketRemove(err:String?, tokensRemaining:Double?) {
-            if (err != nil) {
-                callback(err: err, remainingTokens: nil)
-                return
-            }
-            self.tokensThisInterval += count
-            callback(err: nil, remainingTokens: tokensRemaining)
-        }
-        
         return self.bucket.removeToken(count: count, callback: afterBucketRemove)
     }
     
