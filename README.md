@@ -7,7 +7,9 @@ ex. `let rl = RateLimiter(tokensPerInterval: 10, interval: "second")`
 
 or a token bucket `let tb = TokenBucket(sizeOfBucket: 10, tokensPerInterval: 1, interval: "second")`
 
-Use removeTokens to queue rate limited functions
+Use removeTokens to queue rate limited functions.
+
+If there are not enough tokens in the bucket to fulfill the request, it will dispatch the callback when there are enough. Alternatively, if you create the rate limiter with the optional parameter `firesImmediatly` eg. `let rl = RateLimiter(tokensPerInterval: 10, interval: "second", firesImmediatly: true)` it will instead execute callbacks immediately.
 
 ```
 // Using trailing closures
