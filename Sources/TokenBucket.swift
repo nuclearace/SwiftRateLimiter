@@ -9,16 +9,18 @@
 import Dispatch
 import Foundation
 
-class TokenBucket {
-    let queue: DispatchQueue
-    let sizeOfBucket: Double
-    let tokensPerInterval: Double
-    let interval: Double
+public class TokenBucket {
+    public let sizeOfBucket: Double
+    public let tokensPerInterval: Double
+    public let interval: Double
     
-    var contains = 0.0
+    public var contains = 0.0
+    
+    let queue: DispatchQueue
+    
     var lastDrip = Date().timeIntervalSince1970
     
-    init(sizeOfBucket:Double, tokensPerInterval: Double, interval: String, queue: DispatchQueue = .main) {
+    public init(sizeOfBucket:Double, tokensPerInterval: Double, interval: String, queue: DispatchQueue = .main) {
         self.sizeOfBucket = sizeOfBucket
         self.tokensPerInterval = tokensPerInterval
         self.contains = sizeOfBucket
@@ -51,7 +53,7 @@ class TokenBucket {
         self.contains = min(newContains, self.sizeOfBucket)
     }
     
-    func removeTokens(_ count: Double, callback: @escaping ((String?, Double?) -> Void)) {
+    public func removeTokens(_ count: Double, callback: @escaping ((String?, Double?) -> Void)) {
         // Used if we have to wait for more tokens
         func createDispatchLater() {
             let waitInterval = ceil((count - contains) * (interval / tokensPerInterval)) * 1000000000

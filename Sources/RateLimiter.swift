@@ -9,7 +9,7 @@
 import Dispatch
 import Foundation
 
-class RateLimiter {
+public class RateLimiter {
     let bucket: TokenBucket
     let queue: DispatchQueue
     
@@ -17,7 +17,7 @@ class RateLimiter {
     var tokensThisInterval = 0.0
     var firesImmediatly = false
     
-    init(tokensPerInterval: Double, interval: String, firesImmediatly: Bool = false, queue: DispatchQueue = .main) {
+    public init(tokensPerInterval: Double, interval: String, firesImmediatly: Bool = false, queue: DispatchQueue = .main) {
         self.bucket = TokenBucket(sizeOfBucket: tokensPerInterval,
             tokensPerInterval: tokensPerInterval, interval: interval)
         self.bucket.contains = tokensPerInterval
@@ -25,7 +25,7 @@ class RateLimiter {
         self.queue = queue
     }
     
-    func removeTokens(_ count: Double, callback: @escaping ((String?, Double?) -> Void)) {
+    public func removeTokens(_ count: Double, callback: @escaping ((String?, Double?) -> Void)) {
         
         if count > bucket.sizeOfBucket {
             callback("Requested more tokens than the bucket can contain", nil)
@@ -82,8 +82,8 @@ class RateLimiter {
         return bucket.removeTokens(count, callback: afterBucketRemove)
     }
     
-    func getTokens() -> Double {
+    public func getTokens() -> Double {
         self.bucket.drip()
-        return self.bucket.contains
+        return bucket.contains
     }
 }
