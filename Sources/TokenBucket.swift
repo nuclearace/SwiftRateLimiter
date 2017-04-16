@@ -57,8 +57,7 @@ public class TokenBucket {
         // Used if we have to wait for more tokens
         func createDispatchLater() {
             let waitInterval = ceil((count - contains) * (interval / tokensPerInterval)) * 1000000000
-            
-            let waitTime = DispatchTime.now() + Double(Int64(waitInterval)) / Double(NSEC_PER_SEC)
+            let waitTime = DispatchTime.now() + Double(Int64(waitInterval)) / Double(1000000000)
             
             queue.asyncAfter(deadline: waitTime) {
                 self.removeTokens(count, callback: callback)
