@@ -47,7 +47,7 @@ public class RateLimiter {
             }
             
             
-            let time = ceil(intervalStart + bucket.interval - now) * Double(NSEC_PER_SEC)
+            let time = ceil(intervalStart + bucket.interval - now) * Double(1000000000)
             let waitInterval = DispatchTime(uptimeNanoseconds: UInt64(time))
             
             queue.asyncAfter(deadline: waitInterval) {
