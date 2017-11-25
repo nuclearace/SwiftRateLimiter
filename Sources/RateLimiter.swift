@@ -12,78 +12,67 @@ import Foundation
 public class RateLimiter {
     let bucket: TokenBucket
     let queue: DispatchQueue
-    
+
     var intervalStart = Date().timeIntervalSince1970
     var tokensThisInterval = 0.0
     var firesImmediatly = false
-    
-    public init(tokensPerInterval: Double, interval: String, firesImmediatly: Bool = false, queue: DispatchQueue = .main) {
+
+    public init(tokensPerInterval: Double,
+                interval: RateInterval,
+                firesImmediatly: Bool = false,
+                queue: DispatchQueue = .main) {
         self.bucket = TokenBucket(sizeOfBucket: tokensPerInterval,
-            tokensPerInterval: tokensPerInterval, interval: interval)
+                                  tokensPerInterval: tokensPerInterval,
+                                  interval: interval)
         self.bucket.contains = tokensPerInterval
         self.firesImmediatly = firesImmediatly
         self.queue = queue
     }
-    
-    public func removeTokens(_ count: Double, callback: @escaping ((String?, Double?) -> Void)) {
-        
+
+    public func removeTokens(_ count: Double, callback: @escaping (Double) -> ()) {
         if count > bucket.sizeOfBucket {
-            callback("Requested more tokens than the bucket can contain", nil)
-            
+            callback(-Double.infinity)
+
             return
         }
-        
+
         let now = Date().timeIntervalSince1970
-        
+
         if now - intervalStart >= bucket.interval {
-            self.intervalStart = now
-            self.tokensThisInterval = 0
+            intervalStart = now
+            tokensThisInterval = 0
         }
-        
+
         guard count <= bucket.tokensPerInterval - tokensThisInterval else {
-            
             if firesImmediatly {
-                return callback(nil, -1)
+                return callback(-Double.infinity)
             }
-            
-            
-            let time = ceil(intervalStart + bucket.interval - now) * Double(NSEC_PER_SEC)
-            let waitInterval = DispatchTime(uptimeNanoseconds: UInt64(time))
-            
-            queue.asyncAfter(deadline: waitInterval) {
-                func afterBucketRemove(_ err: String?, tokensRemaining: Double?) {
-                    if err != nil {
-                        callback(err, nil)
-                        
-                        return
-                    }
-                    
+
+            queue.asyncAfter(deadline: DispatchTime.now() + ceil(intervalStart + bucket.interval - now)) {
+                func afterBucketRemove(tokensRemaining: Double) {
                     self.tokensThisInterval += count
-                    
-                    callback(nil, tokensRemaining)
+
+                    callback(tokensRemaining)
                 }
-                
+
                 self.bucket.removeTokens(count, callback: afterBucketRemove)
             }
-            
+
             return
         }
-        
-        func afterBucketRemove(_ err:String?, tokensRemaining:Double?) {
-            if err != nil {
-                callback(err, nil)
-                return
-            }
-            
-            self.tokensThisInterval += count
-            callback(nil, tokensRemaining)
+
+        func afterBucketRemove(tokensRemaining: Double) {
+            tokensThisInterval += count
+
+            callback(tokensRemaining)
         }
-        
+
         return bucket.removeTokens(count, callback: afterBucketRemove)
     }
-    
+
     public func getTokens() -> Double {
-        self.bucket.drip()
+        bucket.drip()
+
         return bucket.contains
     }
 }
